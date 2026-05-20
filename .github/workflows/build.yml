@@ -1,8 +1,6 @@
 name: Build APK
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -12,20 +10,16 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Install Java
+      uses: actions/setup-java@v4
+      with:
+        distribution: 'temurin'
+        java-version: '17'
+    
+    - name: Install buildozer
+      run: |
+        pip install buildozer kivy
+    
     - name: Build APK
-      uses: kivy/buildozer-action@main
-      with:
-        command: android debug
-    
-    - name: Upload APK
-      uses: actions/upload-artifact@v4
-      with:
-        name: lotto-apk
-        path: bin/*.apk
-    
-    - name: Create Release
-      uses: ncipollo/release-action@v1
-      with:
-        artifacts: "bin/*.apk"
-        tag: v1.0.0
-        token: ${{ secrets.GITHUB_TOKEN }}
+      run: |
+        buildozer android debug
