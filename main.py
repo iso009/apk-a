@@ -7,9 +7,13 @@ from kivy.uix.checkbox import CheckBox
 from kivy.uix.scrollview import ScrollView
 from kivy.uix.popup import Popup
 from kivy.network.urlrequest import UrlRequest
-import json
+from kivy.core.window import Window
+from kivy.graphics import Color, Rectangle
+from kivy.utils import get_color_from_hex
 
-CURRENT_VERSION = "1.0.1"
+Window.size = (480, 800)
+
+CURRENT_VERSION = "1.0.2"
 VERSION_CHECK_URL = "https://raw.githubusercontent.com/iso009/apk-a/main/version.json"
 
 class Ticket3D:
@@ -31,33 +35,65 @@ class Ticket3D:
 
 ALL_TICKETS = [Ticket3D(i) for i in range(1000)]
 
-class DanmaPanel(BoxLayout):
+class CardBox(BoxLayout):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.orientation = 'vertical'
-        self.spacing = 8
+        self.padding = 15
+        self.spacing = 10
+        with self.canvas.before:
+            Color(*get_color_from_hex('#ffffff'))
+            self.rect = Rectangle(pos=self.pos, size=self.size)
+        self.bind(pos=self.update_rect, size=self.update_rect)
+    
+    def update_rect(self, instance, value):
+        self.rect.pos = instance.pos
+        self.rect.size = instance.size
+
+class DanmaPanel(CardBox):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
         self.size_hint_y = None
-        self.height = 150
+        self.height = 200
         
-        self.add_widget(Label(text='财富广场彩票站', font_size=16, color=(1, 0, 0, 1), size_hint_y=None, height=30))
-        self.add_widget(Label(text='微信: 13296999092', font_size=14, color=(1, 0, 0, 1), size_hint_y=None, height=25))
+        header = BoxLayout(size_hint_y=None, height=60, spacing=10)
+        title = Label(text='定胆号码', font_size=20, bold=True, color=get_color_from_hex('#333333'))
+        header.add_widget(title)
+        self.add_widget(header)
         
-        title = Label(text='定胆号码', font_size=18, bold=True, size_hint_y=None, height=30)
-        self.add_widget(title)
+        info_layout = BoxLayout(orientation='vertical', size_hint_y=None, height=40, spacing=5)
+        info_layout.add_widget(Label(text='财富广场彩票站', font_size=14, color=get_color_from_hex('#e74c3c')))
+        info_layout.add_widget(Label(text='微信: 13296999092', font_size=12, color=get_color_from_hex('#e74c3c')))
+        self.add_widget(info_layout)
         
-        grid = GridLayout(cols=5, spacing=5, size_hint_y=None, height=40)
+        grid = GridLayout(cols=5, spacing=8, size_hint_y=None, height=50)
         self.checkboxes = []
         for i in range(10):
-            cb = CheckBox(active=True, size_hint=(None, None), size=(35, 35))
+            cb = CheckBox(active=True, size_hint=(None, None), size=(40, 40), color=get_color_from_hex('#3498db'))
             self.checkboxes.append(cb)
             grid.add_widget(cb)
-            grid.add_widget(Label(text=str(i), font_size=14))
+            num_label = Label(text=str(i), font_size=16, color=get_color_from_hex('#333333'))
+            grid.add_widget(num_label)
         self.add_widget(grid)
         
-        btn_layout = BoxLayout(spacing=10, size_hint_y=None, height=40)
-        self.select_all_btn = Button(text='全选', size_hint=(0.5, 1), font_size=14)
+        btn_layout = BoxLayout(spacing=15, size_hint_y=None, height=45)
+        self.select_all_btn = Button(
+            text='全选', 
+            size_hint=(0.5, 1), 
+            font_size=16,
+            background_color=get_color_from_hex('#3498db'),
+            color=(1, 1, 1, 1),
+            bold=True
+        )
         self.select_all_btn.bind(on_press=self.select_all)
-        self.clear_btn = Button(text='清空', size_hint=(0.5, 1), font_size=14)
+        self.clear_btn = Button(
+            text='清空', 
+            size_hint=(0.5, 1), 
+            font_size=16,
+            background_color=get_color_from_hex('#95a5a6'),
+            color=(1, 1, 1, 1),
+            bold=True
+        )
         self.clear_btn.bind(on_press=self.clear_all)
         btn_layout.add_widget(self.select_all_btn)
         btn_layout.add_widget(self.clear_btn)
@@ -74,35 +110,33 @@ class DanmaPanel(BoxLayout):
     def get_values(self):
         return [i for i, cb in enumerate(self.checkboxes) if cb.active]
 
-class SumSpanPanel(BoxLayout):
+class SumSpanPanel(CardBox):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.orientation = 'vertical'
-        self.spacing = 8
         self.size_hint_y = None
-        self.height = 160
+        self.height = 200
         
-        title = Label(text='和值/跨度', font_size=18, bold=True, size_hint_y=None, height=30)
+        title = Label(text='和值/跨度', font_size=20, bold=True, color=get_color_from_hex('#333333'), size_hint_y=None, height=40)
         self.add_widget(title)
         
-        self.add_widget(Label(text='和尾:', font_size=14, size_hint_y=None, height=25))
-        tail_grid = GridLayout(cols=5, spacing=5, size_hint_y=None, height=35)
+        self.add_widget(Label(text='和尾', font_size=16, color=get_color_from_hex('#666666'), size_hint_y=None, height=30))
+        tail_grid = GridLayout(cols=5, spacing=8, size_hint_y=None, height=40)
         self.tail_checkboxes = []
         for i in range(10):
-            cb = CheckBox(active=True, size_hint=(None, None), size=(30, 30))
+            cb = CheckBox(active=True, size_hint=(None, None), size=(35, 35), color=get_color_from_hex('#27ae60'))
             self.tail_checkboxes.append(cb)
             tail_grid.add_widget(cb)
-            tail_grid.add_widget(Label(text=str(i), font_size=12))
+            tail_grid.add_widget(Label(text=str(i), font_size=14, color=get_color_from_hex('#333333')))
         self.add_widget(tail_grid)
         
-        self.add_widget(Label(text='跨度:', font_size=14, size_hint_y=None, height=25))
-        span_grid = GridLayout(cols=5, spacing=5, size_hint_y=None, height=35)
+        self.add_widget(Label(text='跨度', font_size=16, color=get_color_from_hex('#666666'), size_hint_y=None, height=30))
+        span_grid = GridLayout(cols=5, spacing=8, size_hint_y=None, height=40)
         self.span_checkboxes = []
         for i in range(10):
-            cb = CheckBox(active=True, size_hint=(None, None), size=(30, 30))
+            cb = CheckBox(active=True, size_hint=(None, None), size=(35, 35), color=get_color_from_hex('#27ae60'))
             self.span_checkboxes.append(cb)
             span_grid.add_widget(cb)
-            span_grid.add_widget(Label(text=str(i), font_size=12))
+            span_grid.add_widget(Label(text=str(i), font_size=14, color=get_color_from_hex('#333333')))
         self.add_widget(span_grid)
     
     def get_values(self):
@@ -110,45 +144,43 @@ class SumSpanPanel(BoxLayout):
         spans = [i for i, cb in enumerate(self.span_checkboxes) if cb.active]
         return {'tails': tails, 'spans': spans}
 
-class PositionPanel(BoxLayout):
+class PositionPanel(CardBox):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self.orientation = 'vertical'
-        self.spacing = 8
         self.size_hint_y = None
-        self.height = 220
+        self.height = 280
         
-        title = Label(text='定位胆码', font_size=18, bold=True, size_hint_y=None, height=30)
+        title = Label(text='定位胆码', font_size=20, bold=True, color=get_color_from_hex('#333333'), size_hint_y=None, height=40)
         self.add_widget(title)
         
-        self.add_widget(Label(text='百位:', font_size=14, size_hint_y=None, height=25))
-        bai_grid = GridLayout(cols=5, spacing=5, size_hint_y=None, height=35)
+        self.add_widget(Label(text='百位', font_size=16, color=get_color_from_hex('#666666'), size_hint_y=None, height=30))
+        bai_grid = GridLayout(cols=5, spacing=8, size_hint_y=None, height=40)
         self.bai_checkboxes = []
         for i in range(10):
-            cb = CheckBox(active=True, size_hint=(None, None), size=(30, 30))
+            cb = CheckBox(active=True, size_hint=(None, None), size=(35, 35), color=get_color_from_hex('#f39c12'))
             self.bai_checkboxes.append(cb)
             bai_grid.add_widget(cb)
-            bai_grid.add_widget(Label(text=str(i), font_size=12))
+            bai_grid.add_widget(Label(text=str(i), font_size=14, color=get_color_from_hex('#333333')))
         self.add_widget(bai_grid)
         
-        self.add_widget(Label(text='十位:', font_size=14, size_hint_y=None, height=25))
-        shi_grid = GridLayout(cols=5, spacing=5, size_hint_y=None, height=35)
+        self.add_widget(Label(text='十位', font_size=16, color=get_color_from_hex('#666666'), size_hint_y=None, height=30))
+        shi_grid = GridLayout(cols=5, spacing=8, size_hint_y=None, height=40)
         self.shi_checkboxes = []
         for i in range(10):
-            cb = CheckBox(active=True, size_hint=(None, None), size=(30, 30))
+            cb = CheckBox(active=True, size_hint=(None, None), size=(35, 35), color=get_color_from_hex('#f39c12'))
             self.shi_checkboxes.append(cb)
             shi_grid.add_widget(cb)
-            shi_grid.add_widget(Label(text=str(i), font_size=12))
+            shi_grid.add_widget(Label(text=str(i), font_size=14, color=get_color_from_hex('#333333')))
         self.add_widget(shi_grid)
         
-        self.add_widget(Label(text='个位:', font_size=14, size_hint_y=None, height=25))
-        wei_grid = GridLayout(cols=5, spacing=5, size_hint_y=None, height=35)
+        self.add_widget(Label(text='个位', font_size=16, color=get_color_from_hex('#666666'), size_hint_y=None, height=30))
+        wei_grid = GridLayout(cols=5, spacing=8, size_hint_y=None, height=40)
         self.wei_checkboxes = []
         for i in range(10):
-            cb = CheckBox(active=True, size_hint=(None, None), size=(30, 30))
+            cb = CheckBox(active=True, size_hint=(None, None), size=(35, 35), color=get_color_from_hex('#f39c12'))
             self.wei_checkboxes.append(cb)
             wei_grid.add_widget(cb)
-            wei_grid.add_widget(Label(text=str(i), font_size=12))
+            wei_grid.add_widget(Label(text=str(i), font_size=14, color=get_color_from_hex('#333333')))
         self.add_widget(wei_grid)
     
     def get_values(self):
@@ -159,17 +191,31 @@ class PositionPanel(BoxLayout):
 
 class FilterApp(App):
     def build(self):
-        self.root = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        root = BoxLayout(orientation='vertical', padding=10, spacing=10)
+        with root.canvas.before:
+            Color(*get_color_from_hex('#ecf0f1'))
+            self.bg_rect = Rectangle(pos=root.pos, size=root.size)
+        root.bind(pos=self.update_bg, size=self.update_bg)
         
-        header = BoxLayout(size_hint_y=None, height=50, spacing=10)
-        header.add_widget(Label(text=f'版本: {CURRENT_VERSION}', font_size=14))
-        self.update_btn = Button(text='检查更新', size_hint=(0.4, 1), font_size=14)
+        header = BoxLayout(size_hint_y=None, height=60, padding=10, spacing=15)
+        title_label = Label(text='3D彩票缩水', font_size=24, bold=True, color=get_color_from_hex('#2c3e50'))
+        header.add_widget(title_label)
+        self.update_btn = Button(
+            text='检查更新', 
+            size_hint=(0.35, 1), 
+            font_size=14,
+            background_color=get_color_from_hex('#e74c3c'),
+            color=(1, 1, 1, 1)
+        )
         self.update_btn.bind(on_press=self.check_update)
         header.add_widget(self.update_btn)
-        self.root.add_widget(header)
+        root.add_widget(header)
+        
+        self.version_label = Label(text=f'版本: {CURRENT_VERSION}', font_size=12, color=get_color_from_hex('#95a5a6'), size_hint_y=None, height=25)
+        root.add_widget(self.version_label)
         
         main_scroll = ScrollView(size_hint=(1, 0.55))
-        main_content = BoxLayout(orientation='vertical', spacing=10, size_hint_y=None)
+        main_content = BoxLayout(orientation='vertical', spacing=12, size_hint_y=None, padding=5)
         main_content.bind(minimum_height=main_content.setter('height'))
         
         self.danma_panel = DanmaPanel()
@@ -181,35 +227,65 @@ class FilterApp(App):
         self.position_panel = PositionPanel()
         main_content.add_widget(self.position_panel)
         
-        self.filter_btn = Button(text='开始缩水', size_hint=(1, None), height=60, font_size=20)
+        btn_area = BoxLayout(spacing=15, size_hint_y=None, height=70)
+        self.filter_btn = Button(
+            text='开始缩水', 
+            size_hint=(0.6, 1), 
+            font_size=20,
+            background_color=get_color_from_hex('#3498db'),
+            color=(1, 1, 1, 1),
+            bold=True
+        )
         self.filter_btn.bind(on_press=self.run_filter)
-        main_content.add_widget(self.filter_btn)
+        btn_area.add_widget(self.filter_btn)
         
-        self.reset_btn = Button(text='重置条件', size_hint=(1, None), height=50, font_size=16)
+        self.reset_btn = Button(
+            text='重置', 
+            size_hint=(0.4, 1), 
+            font_size=18,
+            background_color=get_color_from_hex('#95a5a6'),
+            color=(1, 1, 1, 1),
+            bold=True
+        )
         self.reset_btn.bind(on_press=self.reset_conditions)
-        main_content.add_widget(self.reset_btn)
+        btn_area.add_widget(self.reset_btn)
+        main_content.add_widget(btn_area)
         
-        self.count_label = Label(text='剩余注数: 1000', font_size=16, size_hint=(1, None), height=40)
+        self.count_label = Label(
+            text='剩余注数: 1000', 
+            font_size=18, 
+            bold=True,
+            color=get_color_from_hex('#27ae60'), 
+            size_hint=(1, None), 
+            height=45
+        )
         main_content.add_widget(self.count_label)
         
         main_scroll.add_widget(main_content)
-        self.root.add_widget(main_scroll)
+        root.add_widget(main_scroll)
         
-        self.result_scroll = ScrollView(size_hint=(1, 0.4))
-        self.result_label = Label(text='', font_size=14, size_hint_y=None)
+        result_card = CardBox(size_hint=(1, 0.4))
+        result_card.add_widget(Label(text='缩水结果', font_size=18, bold=True, color=get_color_from_hex('#333333'), size_hint_y=None, height=40))
+        
+        self.result_scroll = ScrollView(size_hint=(1, 1))
+        self.result_label = Label(text='', font_size=14, size_hint_y=None, color=get_color_from_hex('#333333'))
         self.result_scroll.add_widget(self.result_label)
-        self.root.add_widget(self.result_scroll)
+        result_card.add_widget(self.result_scroll)
+        root.add_widget(result_card)
         
         self.check_update(None)
         
-        return self.root
+        return root
+    
+    def update_bg(self, instance, value):
+        self.bg_rect.pos = instance.pos
+        self.bg_rect.size = instance.size
     
     def check_update(self, instance):
         try:
             UrlRequest(VERSION_CHECK_URL, on_success=self.on_version_check, on_failure=self.on_version_fail)
         except:
-            if instance:
-                self.show_popup('提示', '网络连接失败')
+            pass
     
     def on_version_check(self, req, result):
         try:
@@ -217,17 +293,21 @@ class FilterApp(App):
             download_url = result.get('download_url', '')
             
             if latest_version > CURRENT_VERSION:
-                content = BoxLayout(orientation='vertical', padding=10, spacing=10)
-                content.add_widget(Label(text=f'发现新版本: {latest_version}', font_size=16))
-                content.add_widget(Label(text='点击确定开始下载更新', font_size=14))
-                popup = Popup(title='版本更新', content=content, size_hint=(0.8, 0.5))
-                update_btn = Button(text='确定', size_hint=(1, None), height=50)
+                content = BoxLayout(orientation='vertical', padding=20, spacing=15)
+                content.add_widget(Label(text=f'发现新版本: {latest_version}', font_size=18, bold=True, color=get_color_from_hex('#e74c3c')))
+                content.add_widget(Label(text='点击确定开始下载更新', font_size=16, color=get_color_from_hex('#333333')))
+                popup = Popup(title='版本更新', content=content, size_hint=(0.85, 0.5))
+                update_btn = Button(
+                    text='确定', 
+                    size_hint=(1, None), 
+                    height=55,
+                    font_size=18,
+                    background_color=get_color_from_hex('#3498db'),
+                    color=(1, 1, 1, 1)
+                )
                 update_btn.bind(on_press=lambda x: self.download_update(download_url, popup))
                 content.add_widget(update_btn)
                 popup.open()
-            else:
-                if self.update_btn:
-                    self.show_popup('提示', '当前已是最新版本')
         except:
             pass
     
@@ -236,17 +316,24 @@ class FilterApp(App):
     
     def download_update(self, url, popup):
         popup.dismiss()
-        self.show_popup('提示', '正在下载更新，请稍后...')
+        self.show_popup('提示', '正在打开浏览器下载更新...')
         try:
             import webbrowser
             webbrowser.open(url)
         except:
-            self.show_popup('提示', '请手动下载更新')
+            self.show_popup('提示', '请手动打开浏览器下载')
     
     def show_popup(self, title, message):
-        content = BoxLayout(orientation='vertical', padding=10, spacing=10)
-        content.add_widget(Label(text=message))
-        close_btn = Button(text='确定', size_hint=(1, None), height=40)
+        content = BoxLayout(orientation='vertical', padding=20, spacing=15)
+        content.add_widget(Label(text=message, font_size=16, color=get_color_from_hex('#333333')))
+        close_btn = Button(
+            text='确定', 
+            size_hint=(1, None), 
+            height=50,
+            font_size=16,
+            background_color=get_color_from_hex('#3498db'),
+            color=(1, 1, 1, 1)
+        )
         popup = Popup(title=title, content=content, size_hint=(0.8, 0.4))
         close_btn.bind(on_press=lambda x: popup.dismiss())
         content.add_widget(close_btn)
@@ -280,8 +367,8 @@ class FilterApp(App):
         else:
             lines = [f"{t.num:03d}" for t in results]
             formatted = []
-            for i in range(0, len(lines), 5):
-                formatted.append(' '.join(lines[i:i+5]))
+            for i in range(0, len(lines), 4):
+                formatted.append(' '.join(lines[i:i+4]))
             self.result_label.text = '\n'.join(formatted)
         self.result_label.height = max(self.result_label.texture_size[1], 100)
     
@@ -300,8 +387,8 @@ class FilterApp(App):
         self.count_label.text = '剩余注数: 1000'
         lines = [f"{i:03d}" for i in range(1000)]
         formatted = []
-        for i in range(0, len(lines), 5):
-            formatted.append(' '.join(lines[i:i+5]))
+        for i in range(0, len(lines), 4):
+            formatted.append(' '.join(lines[i:i+4]))
         self.result_label.text = '\n'.join(formatted)
         self.result_label.height = max(self.result_label.texture_size[1], 100)
 
