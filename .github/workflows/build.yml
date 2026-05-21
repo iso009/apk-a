@@ -1,6 +1,8 @@
 name: Build APK
 
 on:
+  push:
+    branches: [ main ]
   workflow_dispatch:
 
 jobs:
@@ -27,8 +29,7 @@ jobs:
         sudo apt-get update && sudo apt-get install -y \
           git zip unzip python3-pip \
           autoconf libtool pkg-config zlib1g-dev \
-          libncurses5-dev libncursesw5-dev libtinfo5 cmake \
-          openjdk-17-jdk-headless
+          libncurses5-dev libncursesw5-dev libtinfo5 cmake
     
     - name: Install buildozer and kivy
       run: |
@@ -37,10 +38,7 @@ jobs:
     
     - name: Build APK
       run: |
-        export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
-        export ANDROIDSDK=/tmp/android-sdk
-        export ANDROIDNDK=/tmp/android-ndk
-        buildozer android debug 2>&1 | tail -100
+        buildozer android debug
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
