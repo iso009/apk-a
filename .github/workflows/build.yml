@@ -5,10 +5,13 @@ on:
     branches: [ main ]
   workflow_dispatch:
 
+env:
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+
 jobs:
   build:
     runs-on: ubuntu-22.04
-    timeout-minutes: 60
+    timeout-minutes: 120
     
     steps:
     - uses: actions/checkout@v4
@@ -36,9 +39,13 @@ jobs:
         pip install --upgrade pip
         pip install buildozer kivy==2.2.1 --no-cache-dir
     
+    - name: Accept Android SDK licenses
+      run: |
+        yes | buildozer android update
+    
     - name: Build APK
       run: |
-        buildozer android debug
+        buildozer android debug 2>&1 | tail -50
     
     - name: Upload APK
       uses: actions/upload-artifact@v4
